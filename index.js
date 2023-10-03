@@ -114,9 +114,13 @@ app.get('/', function(req, res){
 });
 
 app.get('/analytics', restrict, function(req, res){
-  // this is causing issues for some reason - only works if signing to the instance via SSO first, then going through the flow in the app
-  // if you start from the app w/o signing to the instance first, it's stuck in some kind of loop
-  var iframeUrl = "https://metabase-23.hosted.staging.metabase.com/dashboard/2-a-look-at-your-invoices-table"
+  var iframeUrl = url.format({
+    pathname: `${METABASE_SITE_URL}/auth/sso`,
+    query: {
+      jwt: signUserToken(req.session.user),
+      return_to: "/dashboard/2-a-look-at-your-invoices-table"
+    }
+  })
   res.send(`<iframe src="${iframeUrl}" frameborder="0" width="1280" height="600" allowtransparency></iframe>`);
 });
 
