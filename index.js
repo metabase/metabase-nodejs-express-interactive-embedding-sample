@@ -48,8 +48,8 @@ app.use(function(req, res, next){
 // dummy database
 
 var users = [
-  { firstName: 'Rene', lastName: 'Mueller', email: 'rene@example.com' },
-  { firstName: 'Cecilia', lastName: 'Stark', email: 'cecilia@example.com'}
+  { firstName: 'Rene', lastName: 'Mueller', email: 'rene@example.com', accountId: 28, accountName: 'Customer-Acme' },
+  { firstName: 'Cecilia', lastName: 'Stark', email: 'cecilia@example.com', accountId: 132, accountName: 'Customer-Fake'}
 ];
 
 // when you create a user, generate a salt
@@ -102,6 +102,8 @@ const signUserToken = user =>
       email: user.email,
       first_name: user.firstName,
       last_name: user.lastName,
+      account_id: user.accountId,
+      groups: [user.accountName],
       exp: Math.round(Date.now() / 1000) + 60 * 10, // 10 minute expiration
     },
     METABASE_JWT_SHARED_SECRET
