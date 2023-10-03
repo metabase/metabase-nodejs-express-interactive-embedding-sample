@@ -108,11 +108,11 @@ const signUserToken = user =>
   );
 
 app.get('/', function(req, res){
-  res.redirect('/restricted');
+  res.redirect('/analytics');
 });
 
-app.get('/restricted', restrict, function(req, res){
-  res.send('Wahoo! restricted area, click to <a href="/logout">logout</a>');
+app.get('/analytics', restrict, function(req, res){
+  res.send('Restricted area, click to <a href="/logout">logout</a>');
 });
 
 app.get('/logout', function(req, res){
@@ -142,7 +142,7 @@ app.post('/login', function (req, res, next) {
         req.session.success = 'Authenticated as ' + user.firstName + '' + user.lastName
           + ' click to <a href="/logout">logout</a>. '
           + ' Redirecting to ' + returnTo + '.';
-        res.redirect(returnTo || '/restricted');
+        res.redirect(returnTo || '/analytics');
         delete req.session.returnTo;
       });
     } else {
