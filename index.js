@@ -114,7 +114,10 @@ app.get('/', function(req, res){
 });
 
 app.get('/analytics', restrict, function(req, res){
-  res.send('Restricted area, click to <a href="/logout">logout</a>');
+  // this is causing issues for some reason - only works if signing to the instance via SSO first, then going through the flow in the app
+  // if you start from the app w/o signing to the instance first, it's stuck in some kind of loop
+  var iframeUrl = "https://metabase-23.hosted.staging.metabase.com/dashboard/2-a-look-at-your-invoices-table"
+  res.send(`<iframe src="${iframeUrl}" frameborder="0" width="1280" height="600" allowtransparency></iframe>`);
 });
 
 app.get('/logout', function(req, res){
@@ -143,8 +146,8 @@ app.post('/login', function (req, res, next) {
         req.session.user = user;
         req.session.success = 'Authenticated as ' + user.firstName + '' + user.lastName
           + ' click to <a href="/logout">logout</a>. '
-          + ' Redirecting to ' + returnTo + '.';
-        res.redirect(returnTo || '/analytics');
+          + ' click to access <a href="/analytics">analytics</a>';
+        res.redirect(returnTo || '/');
         delete req.session.returnTo;
       });
     } else {
