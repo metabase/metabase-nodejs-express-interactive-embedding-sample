@@ -40,10 +40,10 @@ app.use(function(req, res, next){
 
 // dummy database
 
-var users = {
-  user1: { name: 'user1'},
-  user2: { name: 'user2'}
-};
+var users = [
+  { firstName: 'Rene', lastName: 'Mueller', email: 'rene@example.com' },
+  { firstName: 'Cecilia', lastName: 'Stark', email: 'cecilia@example.com'}
+];
 
 // when you create a user, generate a salt
 // and hash the password ('foobar' is the pass here)
@@ -51,19 +51,23 @@ var users = {
 hash({ password: 'foobar' }, function (err, pass, salt, hash) {
   if (err) throw err;
   // store the salt & hash in the "db"
-  users.user1.salt = salt;
-  users.user1.hash = hash;
-  users.user2.salt = salt;
-  users.user2.hash = hash;
+  users.forEach((element) => {
+     element.salt = salt;
+     element.hash = hash;
+    });
 });
 
+function findUserbyEmail(email) {
+  var u = users.find(u => u.email === email);
+  return u;
+}
 
 // Authenticate using our plain-object database of doom!
 
-function authenticate(name, pass, fn) {
-  if (!module.parent) console.log('authenticating %s:%s', name, pass);
-  var user = users[name];
-  // query the db for the given username
+function authenticate(email, pass, fn) {
+  if (!module.parent) console.log('authenticating %s:%s', email, pass);
+  var user = findUserbyEmail(email);
+  // query the db for the given email
   if (!user) return fn(null, null)
   // apply the same algorithm to the POSTed password, applying
   // the hash against the pass / salt, if there is a match we
@@ -106,7 +110,7 @@ app.get('/login', function(req, res){
 });
 
 app.post('/login', function (req, res, next) {
-  authenticate(req.body.username, req.body.password, function(err, user){
+  authenticate(req.body.email, req.body.password, function(err, user){
     if (err) return next(err)
     if (user) {
       // Regenerate session when signing in
@@ -117,17 +121,17 @@ app.post('/login', function (req, res, next) {
         // in the session store to be retrieved,
         // or in this case the entire user object
         req.session.user = user;
-        req.session.success = 'Authenticated as ' + user.name
+        req.session.success = 'Authenticated as ' + user.firstName + '' + user.lastName
           + ' click to <a href="/logout">logout</a>. '
           + ' You may now access <a href="/restricted">/restricted</a>.';
         //res.redirect('back');
-        res.redirect(returnTo || '/');
+        res.redirect(returnTo || '/restricted');
         delete req.session.returnTo;
       });
     } else {
       req.session.error = 'Authentication failed, please check your '
-        + ' username and password.'
-        + ' (use "user1" or "user" and password "foobar")';
+        + ' email and password.'
+        + ' (use "rene@example.com" or "cecilia@example.com" and password "foobar")';
       res.redirect('/login');
     }
   });
