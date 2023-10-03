@@ -1,5 +1,10 @@
 'use strict'
 
+const METABASE_SITE_URL = process.env.METABASE_SITE_URL || "http://localhost:3000";
+const METABASE_JWT_SHARED_SECRET =
+  process.env.METABASE_JWT_SHARED_SECRET ||
+  "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+
 /**
  * Module dependencies.
  */
@@ -8,6 +13,8 @@ const express = require('express')
 const hash = require('pbkdf2-password')()
 const path = require('path');
 const session = require('express-session');
+const jwt = require("jsonwebtoken");
+const url = require("url");
 
 var app = module.exports = express();
 
@@ -89,8 +96,19 @@ function restrict(req, res, next) {
   }
 }
 
+const signUserToken = user =>
+  jwt.sign(
+    {
+      email: user.email,
+      first_name: user.firstName,
+      last_name: user.lastName,
+      exp: Math.round(Date.now() / 1000) + 60 * 10, // 10 minute expiration
+    },
+    METABASE_JWT_SHARED_SECRET
+  );
+
 app.get('/', function(req, res){
-  res.redirect('/login');
+  res.redirect('/restricted');
 });
 
 app.get('/restricted', restrict, function(req, res){
@@ -123,8 +141,7 @@ app.post('/login', function (req, res, next) {
         req.session.user = user;
         req.session.success = 'Authenticated as ' + user.firstName + '' + user.lastName
           + ' click to <a href="/logout">logout</a>. '
-          + ' You may now access <a href="/restricted">/restricted</a>.';
-        //res.redirect('back');
+          + ' Redirecting to ' + returnTo + '.';
         res.redirect(returnTo || '/restricted');
         delete req.session.returnTo;
       });
@@ -135,6 +152,18 @@ app.post('/login', function (req, res, next) {
       res.redirect('/login');
     }
   });
+});
+
+app.get("/sso/metabase", restrict, (req, res) => {
+  res.redirect(
+    url.format({
+      pathname: `${METABASE_SITE_URL}/auth/sso`,
+      query: {
+        jwt: signUserToken(req.session.user),
+        return_to: `${req.query.return_to || '/'}`
+      }
+    })
+  );
 });
 
 /* istanbul ignore next */
