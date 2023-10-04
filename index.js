@@ -114,9 +114,9 @@ app.get('/', function(req, res){
 });
 
 app.get('/analytics', restrict, function(req, res){
-// replace ID with the ID number in the path of your dashboard in Metabase
-const METABASE_DASHBOARD_PATH = "/dashboard/id"
-  var iframeUrl = `/sso/metabase?return_to=${METABASE_DASHBOARD_PATH}';
+// replace ID "1" with the ID number in the path of your dashboard in Metabase.
+const METABASE_DASHBOARD_PATH = "/dashboard/1"
+  var iframeUrl = `/sso/metabase?return_to=${METABASE_DASHBOARD_PATH}`;
   res.send(`<iframe src="${iframeUrl}" frameborder="0" width="1280" height="600" allowtransparency></iframe>`);
 });
 
