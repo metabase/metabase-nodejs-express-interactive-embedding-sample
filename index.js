@@ -114,7 +114,9 @@ app.get('/', function(req, res){
 });
 
 app.get('/analytics', restrict, function(req, res){
-  var iframeUrl = '/sso/metabase?return_to=/dashboard/2-a-look-at-your-invoices-table';
+// replace ID "1" with the ID number in the path of your dashboard in Metabase.
+const METABASE_DASHBOARD_PATH = "/dashboard/1"
+  var iframeUrl = `/sso/metabase?return_to=${METABASE_DASHBOARD_PATH}`;
   res.send(`<iframe src="${iframeUrl}" frameborder="0" width="1280" height="600" allowtransparency></iframe>`);
 });
 
@@ -169,8 +171,8 @@ app.get("/sso/metabase", restrict, (req, res) => {
   );
 });
 
-/* istanbul ignore next */
+const PORT = 8080;
 if (!module.parent) {
-  app.listen(3000);
-  console.log('Express started on port 3000');
+  app.listen(PORT);
+  console.log(`Express started serving on port ${PORT}`);
 }
