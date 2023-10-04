@@ -4,7 +4,7 @@ const METABASE_SITE_URL = process.env.METABASE_SITE_URL || "http://localhost:300
 const METABASE_JWT_SHARED_SECRET =
   process.env.METABASE_JWT_SHARED_SECRET ||
   "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
-
+const mods = 'logo=false&top_nav=false&search=false&new_button=false&side_nav=false&header=false&additional_info=false&breadcrumbs=false&action_buttons=false'
 /**
  * Module dependencies.
  */
@@ -117,7 +117,7 @@ app.get('/analytics', restrict, function(req, res){
 // replace ID "1" with the ID number in the path of your dashboard in Metabase.
 const METABASE_DASHBOARD_PATH = "/dashboard/1"
   var iframeUrl = `/sso/metabase?return_to=${METABASE_DASHBOARD_PATH}`;
-  res.send(`<iframe src="${iframeUrl}" frameborder="0" width="1280" height="600" allowtransparency></iframe>`);
+  res.send(`<iframe src="${iframeUrl}" frameborder="0" width="1280" height="1000" allowtransparency></iframe>`);
 });
 
 app.get('/logout', function(req, res){
@@ -165,7 +165,7 @@ app.get("/sso/metabase", restrict, (req, res) => {
       pathname: `${METABASE_SITE_URL}/auth/sso`,
       query: {
         jwt: signUserToken(req.session.user),
-        return_to: `${req.query.return_to || '/'}`
+        return_to: `${req.query.return_to || '/'}?${mods}`
       }
     })
   );
