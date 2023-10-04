@@ -2,8 +2,7 @@
 
 const METABASE_SITE_URL = process.env.METABASE_SITE_URL || "http://localhost:3000";
 const METABASE_JWT_SHARED_SECRET =
-  process.env.METABASE_JWT_SHARED_SECRET ||
-  "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+  process.env.METABASE_JWT_SHARED_SECRET || "f2a006fbf1a9853eb2e59bff03b61c148af22b1ca18817935aac45ec5a1b2f73" 
 
 /**
  * Module dependencies.
@@ -114,7 +113,7 @@ app.get('/', function(req, res){
 });
 
 app.get('/analytics', restrict, function(req, res){
-  var iframeUrl = '/sso/metabase?return_to=/dashboard/2-a-look-at-your-invoices-table';
+  var iframeUrl = '/sso/metabase?return_to=/dashboard/1';
   res.send(`<iframe src="${iframeUrl}" frameborder="0" width="1280" height="600" allowtransparency></iframe>`);
 });
 
@@ -169,8 +168,8 @@ app.get("/sso/metabase", restrict, (req, res) => {
   );
 });
 
-/* istanbul ignore next */
+const PORT = 8080;
 if (!module.parent) {
-  app.listen(3000);
-  console.log('Express started on port 3000');
+  app.listen(PORT);
+  console.log(`Express started serving on port ${PORT}`);
 }
