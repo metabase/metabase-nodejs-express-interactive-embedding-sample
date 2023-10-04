@@ -114,13 +114,7 @@ app.get('/', function(req, res){
 });
 
 app.get('/analytics', restrict, function(req, res){
-  var iframeUrl = url.format({
-    pathname: `${METABASE_SITE_URL}/auth/sso`,
-    query: {
-      jwt: signUserToken(req.session.user),
-      return_to: "/dashboard/2-a-look-at-your-invoices-table"
-    }
-  })
+  var iframeUrl = '/sso/metabase?return_to=/dashboard/2-a-look-at-your-invoices-table';
   res.send(`<iframe src="${iframeUrl}" frameborder="0" width="1280" height="600" allowtransparency></iframe>`);
 });
 
