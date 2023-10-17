@@ -1,8 +1,8 @@
 # Metabase Node.js interactive embedding sample
 
-Sample code for the Metabase Node.js Interactive Embedding Quickstart LINK.
+This repo includes sample code referenced in the [quick start guide](https://www.metabase.com/learn/customer-facing-analytics/interactive-embedding-quick-start) for setting up interactive embedding with JWT.
 
-You'll need a paid version of Metabase up and running. If you're not sure where to start, sign up for Metabase Cloud: Pro. LINK.
+You'll need a Pro or Enterprise version of Metabase up and running. If you're not sure where to start, sign up for [Pro Cloud](https://www.metabase.com/pricing).
 
 ## Set up your Metabase
 
@@ -88,20 +88,9 @@ user: rene@example.com
 password: foobar
 ```
 
-## Set up groups
+## Set up groups and data sandboxing
 
-TODO
-
-Create groups `Customer Acme` and `Customer Fake` and configure permissions so they can access the collection in which the dashboard is located. Also, setup data sandboxing on the Invoices table filtering on `accountId`.
-
-Under SSO then activate group membership syncing and map `Customer-Acme` and `Customer-Fake` to the groups you've created.
-8. You should be able to sign in with the two users and see the dashboard. If not, check the collection permissions for their respective groups.
-
-## Set up sandboxing
-
-TODO
-
-Both users should be able to see the same dashboard but with different data, beacuse of sandboxing.
+Check out our [quick start guide](https://www.metabase.com/learn/customer-facing-analytics/interactive-embedding-quick-start) to set up interactive embedding with JWT and data sandboxing.
 
 ## Reporting issues
 
