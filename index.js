@@ -1,23 +1,9 @@
 "use strict";
 
-const METABASE_SITE_URL =
-    process.env.METABASE_SITE_URL || "http://localhost:3000";
-const METABASE_JWT_SHARED_SECRET =
-    process.env.METABASE_JWT_SHARED_SECRET ||
-    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
-
-const mods = "logo=false";
-
-/**
- * Module dependencies.
- */
-
 const express = require("express");
 const hash = require("pbkdf2-password")();
 const path = require("path");
 const session = require("express-session");
-const jwt = require("jsonwebtoken");
-const url = require("url");
 
 var app = (module.exports = express());
 
@@ -53,20 +39,8 @@ app.use(function (req, res, next) {
 // dummy database
 
 var users = [
-    {
-        firstName: "Rene",
-        lastName: "Mueller",
-        email: "rene@example.com",
-        accountId: 28,
-        accountName: "Customer-Acme",
-    },
-    {
-        firstName: "Cecilia",
-        lastName: "Stark",
-        email: "cecilia@example.com",
-        accountId: 132,
-        accountName: "Customer-Fake",
-    },
+  { firstName: 'Rene', lastName: 'Mueller', email: 'rene@example.com', accountId: 28, accountName: 'Customer-Acme' },
+  { firstName: 'Cecilia', lastName: 'Stark', email: 'cecilia@example.com', accountId: 132, accountName: 'Customer-Fake'}
 ];
 
 // when you create a user, generate a salt
@@ -113,30 +87,12 @@ function restrict(req, res, next) {
     }
 }
 
-const signUserToken = (user) =>
-    jwt.sign(
-        {
-            email: user.email,
-            first_name: user.firstName,
-            last_name: user.lastName,
-            account_id: user.accountId,
-            groups: [user.accountName],
-            exp: Math.round(Date.now() / 1000) + 60 * 10, // 10 minute expiration
-        },
-        METABASE_JWT_SHARED_SECRET
-    );
-
-app.get("/", function (req, res) {
-    res.redirect("/analytics");
+app.get('/', function(req, res){
+  res.redirect('/protected');
 });
 
-app.get("/analytics", restrict, function (req, res) {
-    // replace ID "1" with the ID number in the path of your dashboard in Metabase.
-    const METABASE_DASHBOARD_PATH = "/dashboard/1";
-    var iframeUrl = `/sso/metabase?return_to=${METABASE_DASHBOARD_PATH}`;
-    res.send(
-        `<iframe src="${iframeUrl}" frameborder="0" width="1280" height="1000" allowtransparency></iframe>`
-    );
+app.get('/protected', restrict, function(req, res){
+  res.send(`This is a protected page. <a href="/logout">Log out</a>`);
 });
 
 app.get("/logout", function (req, res) {
@@ -151,48 +107,31 @@ app.get("/login", function (req, res) {
     res.render("login");
 });
 
-app.post("/login", function (req, res, next) {
-    authenticate(req.body.email, req.body.password, function (err, user) {
-        if (err) return next(err);
-        if (user) {
-            // Regenerate session when signing in
-            // to prevent fixation
-            var returnTo = req.session.returnTo;
-            req.session.regenerate(function () {
-                // Store the user's primary key
-                // in the session store to be retrieved,
-                // or in this case the entire user object
-                req.session.user = user;
-                req.session.success =
-                    "Authenticated as " +
-                    user.firstName +
-                    "" +
-                    user.lastName +
-                    ' click to <a href="/logout">logout</a>. ' +
-                    ' click to access <a href="/analytics">analytics</a>';
-                res.redirect(returnTo || "/");
-                delete req.session.returnTo;
-            });
-        } else {
-            req.session.error =
-                "Authentication failed, please check your " +
-                " email and password." +
-                ' (use "rene@example.com" or "cecilia@example.com" and password "foobar")';
-            res.redirect("/login");
-        }
-    });
-});
-
-app.get("/sso/metabase", restrict, (req, res) => {
-    res.redirect(
-        url.format({
-            pathname: `${METABASE_SITE_URL}/auth/sso`,
-            query: {
-                jwt: signUserToken(req.session.user),
-                return_to: `${req.query.return_to || "/"}?${mods}`,
-            },
-        })
-    );
+app.post('/login', function (req, res, next) {
+  authenticate(req.body.email, req.body.password, function(err, user){
+    if (err) return next(err)
+    if (user) {
+      // Regenerate session when signing in
+      // to prevent fixation
+      var returnTo = req.session.returnTo;
+      req.session.regenerate(function(){
+        // Store the user's primary key
+        // in the session store to be retrieved,
+        // or in this case the entire user object
+        req.session.user = user;
+        req.session.success = 'Authenticated as ' + user.firstName + '' + user.lastName
+          + ' click to <a href="/logout">logout</a>. '
+          + ' click to access <a href="/analytics">analytics</a>';
+        res.redirect(returnTo || '/');
+        delete req.session.returnTo;
+      });
+    } else {
+      req.session.error = 'Authentication failed, please check your '
+        + ' email and password.'
+        + ' (use "rene@example.com" or "cecilia@example.com" and password "foobar")';
+      res.redirect('/login');
+    }
+  });
 });
 
 const PORT = 8080;
