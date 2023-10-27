@@ -17,7 +17,6 @@ const hash = require("pbkdf2-password")();
 const path = require("path");
 const session = require("express-session");
 const jwt = require("jsonwebtoken");
-const url = require("url");
 
 var app = (module.exports = express());
 
@@ -189,15 +188,11 @@ app.post("/login", function (req, res, next) {
 });
 
 app.get("/sso/metabase", restrict, (req, res) => {
-    res.redirect(
-        url.format({
-            pathname: `${METABASE_SITE_URL}/auth/sso`,
-            query: {
-                jwt: signUserToken(req.session.user),
-                return_to: `${req.query.return_to || "/"}?${mods}`,
-            },
-        })
-    );
+    const ssoUrl = new URL("/auth/sso", METABASE_SITE_URL);
+    ssoUrl.searchParams.set("jwt", signUserToken(req.session.user));
+    ssoUrl.searchParams.set("return_to", `${req.query.return_to ?? "/"}?${mods}`);
+  
+    res.redirect(ssoUrl);
 });
 
 const PORT = 8080;
