@@ -17,7 +17,6 @@ const hash = require("pbkdf2-password")();
 const path = require("path");
 const session = require("express-session");
 const jwt = require("jsonwebtoken");
-const url = require("url");
 
 var app = (module.exports = express());
 
@@ -140,11 +139,16 @@ app.get("/analytics", restrict, function (req, res) {
 });
 
 app.get("/logout", function (req, res) {
-    // destroy the user's session to log them out
-    // will be re-created next request
-    req.session.destroy(function () {
-        res.redirect("/");
-    });
+  const mbLogoutUrl = new URL("/auth/logout", METABASE_SITE_URL);
+  
+  // destroy the user's session to log them out
+  // will be re-created next request
+  req.session.destroy(function () {
+    // sign user out of Metabase by loading /auth/logout in a hidden iframe
+    res.send(`
+      You have been logged out. <a href="/login">Log in</a>
+      <iframe src="${mbLogoutUrl}" hidden></iframe>`);
+  });
 });
 
 app.get("/login", function (req, res) {
@@ -184,15 +188,11 @@ app.post("/login", function (req, res, next) {
 });
 
 app.get("/sso/metabase", restrict, (req, res) => {
-    res.redirect(
-        url.format({
-            pathname: `${METABASE_SITE_URL}/auth/sso`,
-            query: {
-                jwt: signUserToken(req.session.user),
-                return_to: `${req.query.return_to || "/"}?${mods}`,
-            },
-        })
-    );
+    const ssoUrl = new URL("/auth/sso", METABASE_SITE_URL);
+    ssoUrl.searchParams.set("jwt", signUserToken(req.session.user));
+    ssoUrl.searchParams.set("return_to", `${req.query.return_to ?? "/"}?${mods}`);
+  
+    res.redirect(ssoUrl);
 });
 
 const PORT = 8080;
