@@ -46,7 +46,7 @@ You'll need to set some environment variables for your server.
 - [METABASE_JWT_SHARED_SECRET](#metabase_jwt_shared_secret)
 - [METABASE_DASHBOARD_PATH](#)
 
-### METBASE_SITE_URL
+### METABASE_SITE_URL
 
 ```sh
 export METABASE_SITE_URL="https://myapp.metabaseapp.com"
