@@ -79,7 +79,11 @@ Start the server by running:
 node index.js
 ```
 
-The app runs by default on port 8080.
+The app runs by default on port 8080. If you want to run it on a different port, set the `PORT` environment variable:
+```sh
+export PORT=8081
+```
+
 
 Visit [http://localhost:8080/analytics](localhost:8080/analytics) and sign in with the following credentials:
 

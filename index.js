@@ -5,7 +5,8 @@ const METABASE_SITE_URL =
 const METABASE_JWT_SHARED_SECRET =
     process.env.METABASE_JWT_SHARED_SECRET ||
     "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
-
+const METABASE_DASHBOARD_PATH =
+    process.env.METABASE_DASHBOARD_PATH || "/dashboard/1";
 const mods = "logo=false";
 
 /**
@@ -130,8 +131,6 @@ app.get("/", function (req, res) {
 });
 
 app.get("/analytics", restrict, function (req, res) {
-    // replace ID "1" with the ID number in the path of your dashboard in Metabase.
-    const METABASE_DASHBOARD_PATH = "/dashboard/1";
     var iframeUrl = `/sso/metabase?return_to=${METABASE_DASHBOARD_PATH}`;
     res.send(
         `<iframe src="${iframeUrl}" frameborder="0" width="1280" height="1000" allowtransparency></iframe>`
@@ -195,7 +194,8 @@ app.get("/sso/metabase", restrict, (req, res) => {
     res.redirect(ssoUrl);
 });
 
-const PORT = 8080;
+const PORT =
+    process.env.PORT || 8080;
 if (!module.parent) {
     app.listen(PORT);
     console.log(`Express started serving on port ${PORT}`);
