@@ -22,7 +22,7 @@ On the card that says **JWT**, click the **Setup** button.
 
 ### JWT Identity provider URI
 
-In **JWT IDENTITY PROVIDER URI** field, paste  `localhost:8080/login`.
+In **JWT IDENTITY PROVIDER URI** field, paste  `localhost:9090/login`.
 
 ### String used by the JWT signing key
 
@@ -79,13 +79,13 @@ Start the server by running:
 node index.js
 ```
 
-The app runs by default on port 8080. If you want to run it on a different port, set the `PORT` environment variable:
+The app runs by default on port 9090. If you want to run it on a different port, set the `PORT` environment variable:
 ```sh
 export PORT=8081
 ```
 
 
-Visit [http://localhost:8080/analytics](localhost:8080/analytics) and sign in with the following credentials:
+Visit [http://localhost:9090/analytics](localhost:9090/analytics) and sign in with the following credentials:
 
 ```sh
 user: rene@example.com
