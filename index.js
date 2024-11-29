@@ -195,7 +195,7 @@ app.get("/sso/metabase", restrict, (req, res) => {
 });
 
 const PORT =
-    process.env.PORT || 8080;
+    process.env.PORT || 9090;
 if (!module.parent) {
     app.listen(PORT);
     console.log(`Express started serving on port ${PORT}`);
