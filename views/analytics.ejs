@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Analytics Dashboard</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        .sidebar {
+            width: 250px;
+            background-color: #f5f5f5;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        .sidebar h3 {
+            margin: 20px 0 10px 0;
+            color: #666;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+        .dashboard-list {
+            list-style: none;
+            padding: 0;
+            flex: 1;
+        }
+        .dashboard-list li {
+            margin-bottom: 10px;
+        }
+        .dashboard-list a {
+            display: block;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 4px;
+            text-decoration: none;
+            color: #333;
+            transition: background-color 0.2s;
+        }
+        .dashboard-list a:hover {
+            background-color: #e0e0e0;
+        }
+        .dashboard-list a.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .content {
+            flex: 1;
+            padding: 20px;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .logout-button {
+            margin-top: auto;
+            padding: 10px;
+            background-color: #f44336;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            text-align: center;
+            transition: background-color 0.2s;
+        }
+        .logout-button:hover {
+            background-color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2>Dashboards</h2>
+            <h3>Home</h3>
+            <ul class="dashboard-list">
+                <li><a href="/analytics?dashboard=home" class="<%= dashboardId === 'home' ? 'active' : '' %>">Metabase Home</a></li>
+            </ul>
+            <h3>Starter</h3>
+            <ul class="dashboard-list">
+                <li><a href="/analytics?dashboard=13" class="<%= dashboardId === '13' ? 'active' : '' %>">Dashboard 13</a></li>
+                <li><a href="/analytics?dashboard=14" class="<%= dashboardId === '14' ? 'active' : '' %>">Dashboard 14</a></li>
+            </ul>
+            <% if (userPlan === 'Pro') { %>
+                <h3>Pro</h3>
+                <ul class="dashboard-list">
+                    <li><a href="/analytics?dashboard=15" class="<%= dashboardId === '15' ? 'active' : '' %>">Dashboard 15</a></li>
+                </ul>
+            <% } %>
+            <a href="/logout" class="logout-button">Logout</a>
+        </div>
+        <div class="content">
+            <iframe src="<%= iframeUrl %>" frameborder="0" allowtransparency></iframe>
+        </div>
+    </div>
+</body>
+</html> 

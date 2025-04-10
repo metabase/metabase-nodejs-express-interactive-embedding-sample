@@ -54,18 +54,35 @@ app.use(function (req, res, next) {
 
 var users = [
     {
-        firstName: "Rene",
-        lastName: "Mueller",
-        email: "rene@example.com",
-        accountId: 28,
-        accountName: "Customer-Acme",
+        firstName: "Admin",
+        lastName: "Super",
+        email: "admin@mb.com",
+        plan: "Admin"
     },
     {
-        firstName: "Cecilia",
-        lastName: "Stark",
-        email: "cecilia@example.com",
-        accountId: 132,
-        accountName: "Customer-Fake",
+        firstName: "Donald",
+        lastName: "McDonald",
+        email: "d@mc.com",
+        tenant: "McDonalds",
+        plan: "Pro",
+        slug: "CA"
+    },
+    {
+        firstName: "Tio",
+        lastName: "Taco",
+        email: "tio@tacobell.com",
+        tenant: "Taco Bell",
+        plan: "Starter",
+        slug: "NY"
+
+    },
+    {
+        firstName: "Maria",
+        lastName: "Enchillada",
+        email: "maria@enchillada.com",
+        tenant: "Taco Bell",
+        plan: "Starter",
+        slug: "NY"
     },
 ];
 
@@ -119,8 +136,8 @@ const signUserToken = (user) =>
             email: user.email,
             first_name: user.firstName,
             last_name: user.lastName,
-            account_id: user.accountId,
-            groups: [user.accountName],
+            slug: user.slug,
+            groups: [user.plan, user.tenant],
             exp: Math.round(Date.now() / 1000) + 60 * 10, // 10 minute expiration
         },
         METABASE_JWT_SHARED_SECRET
@@ -131,10 +148,29 @@ app.get("/", function (req, res) {
 });
 
 app.get("/analytics", restrict, function (req, res) {
-    var iframeUrl = `/sso/metabase?return_to=${METABASE_DASHBOARD_PATH}`;
-    res.send(
-        `<iframe src="${iframeUrl}" frameborder="0" width="1280" height="1000" allowtransparency></iframe>`
-    );
+    const userPlan = req.session.user.plan;
+    let dashboardId = req.query.dashboard || "home"; // Default to home
+    
+    // Validate dashboard access based on plan
+    if (userPlan === 'Starter' && dashboardId === '15') {
+        dashboardId = 'home'; // Redirect Starter users to home if they try to access dashboard 15
+    }
+    
+    let mods;
+    if (dashboardId === 'home') {
+        // Enable navigation for home page but keep search disabled
+        mods = "action_buttons=true&breadcrumbs=true&side_nav=true&top_nav=true&search=false&header=true";
+    } else {
+        // Disable navigation for dashboards
+        mods = "action_buttons=false&breadcrumbs=false&side_nav=false&top_nav=false&search=false&header=false";
+    }
+    
+    const iframeUrl = `/sso/metabase?return_to=${dashboardId === 'home' ? '/' : `/dashboard/${dashboardId}`}&${mods}`;
+    res.render("analytics", { 
+        iframeUrl: iframeUrl,
+        dashboardId: dashboardId,
+        userPlan: userPlan
+    });
 });
 
 app.get("/logout", function (req, res) {
@@ -189,7 +225,15 @@ app.post("/login", function (req, res, next) {
 app.get("/sso/metabase", restrict, (req, res) => {
     const ssoUrl = new URL("/auth/sso", METABASE_SITE_URL);
     ssoUrl.searchParams.set("jwt", signUserToken(req.session.user));
-    ssoUrl.searchParams.set("return_to", `${req.query.return_to ?? "/"}?${mods}`);
+    
+    // Get the return_to path and any additional parameters
+    const returnTo = req.query.return_to ?? "/";
+    const additionalParams = new URLSearchParams(req.query);
+    additionalParams.delete("return_to"); // Remove return_to as we'll handle it separately
+    
+    // Combine return_to with additional parameters
+    const fullReturnTo = `${returnTo}${returnTo.includes('?') ? '&' : '?'}${additionalParams.toString()}`;
+    ssoUrl.searchParams.set("return_to", fullReturnTo);
   
     res.redirect(ssoUrl);
 });
