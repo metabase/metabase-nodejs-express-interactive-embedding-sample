@@ -76,6 +76,9 @@
         .logout-button:hover {
             background-color: #d32f2f;
         }
+        .mcdonalds-section h3 {
+            color: #FFC72C; /* McDonald's yellow */
+        }
     </style>
 </head>
 <body>
@@ -96,6 +99,14 @@
                 <ul class="dashboard-list">
                     <li><a href="/analytics?dashboard=15" class="<%= dashboardId === '15' ? 'active' : '' %>">Dashboard 15</a></li>
                 </ul>
+            <% } %>
+            <% if (isMcDonalds) { %>
+                <div class="mcdonalds-section">
+                    <h3>Custom Reports for McDonald's</h3>
+                    <ul class="dashboard-list">
+                        <li><a href="/analytics?resource=question&id=139" class="<%= resourceType === 'question' && resourceId === '139' ? 'active' : '' %>">Question 139</a></li>
+                    </ul>
+                </div>
             <% } %>
             <a href="/logout" class="logout-button">Logout</a>
         </div>

@@ -6,7 +6,7 @@ const METABASE_JWT_SHARED_SECRET =
     process.env.METABASE_JWT_SHARED_SECRET ||
     "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
 const METABASE_DASHBOARD_PATH =
-    process.env.METABASE_DASHBOARD_PATH || "/dashboard/1";
+    process.env.METABASE_DASHBOARD_PATH || "/dashboard/12";
 const mods = "logo=false";
 
 /**
@@ -74,7 +74,6 @@ var users = [
         tenant: "Taco Bell",
         plan: "Starter",
         slug: "NY"
-
     },
     {
         firstName: "Maria",
@@ -149,27 +148,60 @@ app.get("/", function (req, res) {
 
 app.get("/analytics", restrict, function (req, res) {
     const userPlan = req.session.user.plan;
-    let dashboardId = req.query.dashboard || "home"; // Default to home
+    const userEmail = req.session.user.email;
+    const isMcDonalds = userEmail.endsWith('@mc.com');
     
-    // Validate dashboard access based on plan
-    if (userPlan === 'Starter' && dashboardId === '15') {
-        dashboardId = 'home'; // Redirect Starter users to home if they try to access dashboard 15
+    // Get resource type and ID from query parameters
+    const resourceType = req.query.resource || 'dashboard';
+    const resourceId = req.query.id || req.query.dashboard || 'home';
+    
+    let isAuthorized = true;
+    let redirectToHome = false;
+    
+    // Validate access based on plan and organization
+    if (resourceType === 'dashboard' && resourceId === '15' && userPlan === 'Starter') {
+        // Starter users can't access Pro dashboard
+        isAuthorized = false;
+    } else if (resourceType === 'question' && resourceId === '139' && !isMcDonalds) {
+        // Only McDonald's users can access question 139
+        isAuthorized = false;
+    }
+    
+    // If not authorized, redirect to home
+    if (!isAuthorized) {
+        redirectToHome = true;
     }
     
     let mods;
-    if (dashboardId === 'home') {
+    if (resourceId === 'home' || redirectToHome) {
         // Enable navigation for home page but keep search disabled
         mods = "action_buttons=true&breadcrumbs=true&side_nav=true&top_nav=true&search=false&header=true";
     } else {
-        // Disable navigation for dashboards
+        // Disable navigation for dashboards and questions
         mods = "action_buttons=false&breadcrumbs=false&side_nav=false&top_nav=false&search=false&header=false";
     }
     
-    const iframeUrl = `/sso/metabase?return_to=${dashboardId === 'home' ? '/' : `/dashboard/${dashboardId}`}&${mods}`;
+    // Build the return_to URL based on resource type and redirection status
+    let returnTo;
+    if (redirectToHome || resourceId === 'home') {
+        returnTo = '/';
+    } else if (resourceType === 'dashboard') {
+        returnTo = `/dashboard/${resourceId}`;
+    } else if (resourceType === 'question') {
+        returnTo = `/question/${resourceId}`;
+    } else {
+        returnTo = '/';
+    }
+    
+    const iframeUrl = `/sso/metabase?return_to=${returnTo}&${mods}`;
+    
     res.render("analytics", { 
         iframeUrl: iframeUrl,
-        dashboardId: dashboardId,
-        userPlan: userPlan
+        dashboardId: resourceType === 'dashboard' ? resourceId : null,
+        resourceType: redirectToHome ? 'dashboard' : resourceType,
+        resourceId: redirectToHome ? 'home' : resourceId,
+        userPlan: userPlan,
+        isMcDonalds: isMcDonalds
     });
 });
 
