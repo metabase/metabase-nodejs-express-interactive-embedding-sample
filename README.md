@@ -22,11 +22,24 @@ On the card that says **JWT**, click the **Setup** button.
 
 ### JWT Identity provider URI
 
-In **JWT IDENTITY PROVIDER URI** field, paste  `localhost:9090/login`.
+In the **JWT IDENTITY PROVIDER URI** field, paste  `http://localhost:9090/sso/metabase`.
 
 ### String used by the JWT signing key
 
 Click the **Generate key** button. Copy the key.
+
+## Configure embedding
+
+### Configure interactive embedding
+
+Go to **Admin Settings** > **Settings** > **Embedding**. 
+On the **Interactive embedding** card, hit the **Configure** button.
+
+Enable Interactive embedding with the toggle buton.
+In the **Authorized origins** field, paste `http://localhost:*`.
+
+Last, if your Metabase is not running on localhost (ex: you are using Metabase Cloud), set the **SameSite cookie setting** to `None`.
+Otherwise, leave it with the default value (`Lax`).
 
 ## Running the server
 
