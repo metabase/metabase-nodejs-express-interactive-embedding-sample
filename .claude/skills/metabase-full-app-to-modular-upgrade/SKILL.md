@@ -157,7 +157,12 @@ Extract from the iframe `src` attribute (which may be a template expression, var
 - **Metabase base URL**: may come from env var, constant, or be hardcoded
 - **Content path**: the path after the base URL, e.g., `/dashboard/1`, `/question/entity/abc123`, `/collection/5`
 - **Content type**: `dashboard`, `question`, `collection`, or `home` (if path is `/`)
-- **Entity ID or numeric ID**: the identifier in the path
+- **Entity ID or numeric ID**: the identifier in the path.
+  - An ID may be 
+    - a numeric id, i.e. 123
+    - a numeric id + slug, i.e. 123-slug, in this case you should drop off slug
+    - an entity id
+      - also there may be a case with url like `/question/entity/{entity_id}`
 - **URL hash/query parameters** used for UI customization (e.g., `#logo=false&top_nav=false`)
 - **SSO wrapping**: whether the iframe goes through an SSO endpoint first (e.g., `/sso/metabase?return_to=...`)
 
@@ -167,6 +172,7 @@ Extract from the iframe `src` attribute (which may be a template expression, var
 |---|---|---|
 | `/dashboard/{id}` or `/dashboard/entity/{eid}` | `<metabase-dashboard>` | `dashboard-id="{id or eid}"` |
 | `/question/{id}` or `/question/entity/{eid}` | `<metabase-question>` | `question-id="{id or eid}"` |
+| `/model/{id}` or `/model/entity/{eid}` | `<metabase-question>` | `question-id="{id or eid}"` |
 | `/collection/{id}` or `/collection/entity/{eid}` | `<metabase-browser>` | `initial-collection="{id or eid}"` |
 | `/` (Metabase home / root) | `<metabase-browser>` | `initial-collection="root"` |
 
@@ -365,7 +371,6 @@ Read each modified file and verify:
 - Web components have required attributes (`dashboard-id`, `question-id`, or `initial-collection`)
 - Template syntax is valid (no unclosed tags, correct expressions)
 - Dead-code variables identified in Step 3e have been removed
-- Proper and valid IDs were used for Modular embedding components
 
 **Pass criteria**: all checks pass.
 
