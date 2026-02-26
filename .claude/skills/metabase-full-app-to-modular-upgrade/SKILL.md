@@ -310,17 +310,17 @@ Modular embedding reads its configuration from `window.metabaseConfig`. There is
 
 The existing SSO endpoint currently REDIRECTS the browser to Metabase's `/auth/sso?jwt={token}&return_to={path}`.
 
-For modular embedding, the embed.js SDK sends requests to the JWT Identity Provider URI with the query parameter `response=json`. The endpoint MUST detect this and return JSON instead of redirecting.
+For modular embedding, the embed.js SDK sends requests to the JWT Identity Provider URI and expects a JSON response. The endpoint MUST be converted to return JSON only — do NOT keep a fallback to the old redirect-based auth flow.
 
-**The endpoint MUST support BOTH behaviors** to allow gradual migration and because Metabase itself may call the endpoint in redirect mode.
+This is a full migration, not a gradual one. The old iframe-based embedding is being completely replaced, so the redirect behavior is no longer needed.
 
 Refer to the Metabase authentication documentation for the expected endpoint behavior: https://www.metabase.com/docs/latest/embedding/authentication
 
 **CRITICAL constraints:**
 - Do NOT modify the JWT signing logic — only change how the response is delivered
-- Do NOT remove the existing redirect behavior — add the JSON path alongside it
-- The JSON check MUST come BEFORE the existing redirect logic
+- REMOVE the old redirect behavior entirely — the endpoint should ONLY return JSON
 - The JSON response body MUST be exactly `{ "jwt": "<token>" }` — no other fields
+- Remove any code that builds the redirect URL (e.g., `new URL("/auth/sso", ...)`, `searchParams.set("return_to", ...)`) as it is now dead code
 
 #### 3d: iframe replacement plan
 
@@ -335,12 +335,13 @@ For EACH iframe from Step 2d's Migration Mapping Table:
 
 #### 3e: Dead code removal
 
-After replacing iframes, identify and remove:
+After replacing iframes and converting the SSO endpoint, identify and remove:
 
 - Variables that built the iframe `src` URL (e.g., `iframeUrl`, `mbUrl`) IF they are no longer used anywhere
-- URL parameter/modifier strings that were appended to iframe URLs (e.g., `mods = "logo=false"`)
+- URL parameter/modifier strings that were appended to iframe URLs (e.g., `mods = "logo=false"`) IF they are no longer referenced anywhere (check the SSO endpoint — if the redirect logic was removed, these strings may now be dead code too)
+- Redirect-related code removed from the SSO endpoint (e.g., URL construction for `/auth/sso`, `return_to` parameter handling) — this is already handled as part of Step 3c
 - Helper functions that constructed Metabase iframe URLs IF they are no longer called
-- Do NOT remove: the SSO endpoint, JWT signing function, environment variable reads, or any code that is used by other parts of the application
+- Do NOT remove: the SSO endpoint itself, JWT signing function, environment variable reads, or any code that is used by other parts of the application
 
 #### 3g: Metabase admin configuration notes (manual steps for the user)
 
@@ -396,14 +397,14 @@ Use Grep to search for `embed.js` across ALL project files (excluding `node_modu
 Use Grep to search for `window.metabaseConfig` across ALL project files (excluding `node_modules`, `.git`).
 **Pass criteria**: exactly ONE occurrence (the assignment in the layout/head file).
 
-#### 5d: SSO endpoint supports JSON response
+#### 5d: SSO endpoint returns JSON only
 
-Read the SSO endpoint file. Verify it contains:
-- A check for `response` query parameter equaling `"json"`
-- A JSON response returning `{ jwt: token }`
-- The original redirect logic still present
+Read the SSO endpoint file. Verify:
+- The endpoint returns a JSON response with `{ jwt: token }`
+- The old redirect logic (`res.redirect`, `new URL("/auth/sso", ...)`, `return_to`) has been fully removed
+- No conditional check for `response=json` exists (since JSON is the only response format now)
 
-**Pass criteria**: all three elements present.
+**Pass criteria**: endpoint returns JSON only, no redirect fallback remains.
 
 #### 5e: Web components have required attributes
 
