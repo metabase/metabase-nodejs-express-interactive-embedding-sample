@@ -20,13 +20,14 @@ If you cannot complete a step due to missing info or tool failure, you must:
 
 Your response MUST contain these sections in this exact order:
 
-1. **Migration Plan Checklist** (Step 0)
-2. **Step 1 Results: Project Scan**
-3. **Step 2 Results: iframe Analysis & Web Component Mapping**
-4. **Step 3: Migration Plan**
-5. **Step 4: Applied Code Changes**
-6. **Step 5: Validation**
-7. **Step 6: Final Summary**
+1. **Step 0 Results: Metabase Version Detection**
+2. **Migration Plan Checklist**
+3. **Step 1 Results: Project Scan**
+4. **Step 2 Results: iframe Analysis & Web Component Mapping**
+5. **Step 3: Migration Plan**
+6. **Step 4: Applied Code Changes**
+7. **Step 5: Validation**
+8. **Step 6: Final Summary**
 
 Each step section MUST end with a status line:
 
@@ -72,6 +73,12 @@ You MUST use AskUserQuestion and halt until answered if:
 - Multiple iframes specify different `locale` values (ask user which locale to set in `window.metabaseConfig`)
 
 ## Workflow
+
+### Step 0: Detect Metabase version
+
+Before anything else, determine the Metabase version. Grep the project for Docker image tags (`metabase/metabase:v`), `METABASE_VERSION`, or version references. If undetected, AskUserQuestion (options: `v53 or older`, `v54–v58`, `v59+`). Abort if < v53 (modular embedding not available). Record the version — it controls `jwtProviderUri` placement in later steps.
+
+---
 
 ### Step 1: Scan the project (NO sub-agent)
 
@@ -247,7 +254,9 @@ Modular embedding reads its configuration from `window.metabaseConfig`. There is
 - **Locale**: If a `locale` parameter was found on any iframe in Step 2c, add `locale: "{code}"` to the config object. If multiple iframes had different locale values, the user will have already been asked which one to use (per AskUserQuestion trigger).
 - Both `instanceUrl` and `jwtProviderUri` MUST be rendered dynamically using the project's template expression syntax.
 - **`jwtProviderUri`** MUST be a **full absolute URL** including protocol and host (e.g., `http://localhost:9090/sso/metabase`). Relative paths will NOT work. Pass the app's origin as a template variable (e.g., via middleware) and render: `jwtProviderUri: "{APP_URL}/sso/metabase"`.
-  - On Metabase v59+, `jwtProviderUri` in client config is the preferred auth approach. For versions below v59, the JWT Identity Provider URI must be configured in admin settings instead (see Step 3g).
+  - **Version-dependent behavior** (use the version detected in Step 0):
+    - **v59+**: Include `jwtProviderUri` in `window.metabaseConfig` (preferred approach).
+    - **v53–v58**: Do NOT include `jwtProviderUri` in `window.metabaseConfig` — it is not supported. The JWT Identity Provider URI must be configured in Metabase admin settings instead (see Step 3g).
 - **CRITICAL**: `window.metabaseConfig` MUST be set EXACTLY ONCE. It must NOT appear inside any per-iframe replacement code.
 
 #### 3c: SSO endpoint modification
@@ -293,7 +302,9 @@ List these as part of the plan — they will be included in the final summary:
 
 1. **Enable modular embedding**: Admin > Embedding > toggle "Enable modular embedding"
 2. **Configure CORS origins**: Admin > Embedding > Modular embedding > add the host app's domain (e.g., `http://localhost:9090`)
-3. **Configure JWT Identity Provider URI** (required for Metabase < v59; optional on v59+ if `jwtProviderUri` is set in `window.metabaseConfig`): Admin > Authentication > JWT > set to the full URL of the SSO endpoint (e.g., `http://localhost:9090/sso/metabase`)
+3. **Configure JWT Identity Provider URI** (use the version detected in Step 0):
+   - **v53–v58 (REQUIRED)**: Admin > Authentication > JWT > set to the full URL of the SSO endpoint (e.g., `http://localhost:9090/sso/metabase`). This is the ONLY way to configure JWT auth on these versions.
+   - **v59+ (optional if `jwtProviderUri` is set in `window.metabaseConfig`)**: Admin > Authentication > JWT > set to the full URL of the SSO endpoint. This is a fallback — if `jwtProviderUri` was added to `window.metabaseConfig` in Step 3b, this admin setting is not strictly required but can serve as a backup.
 4. **JWT shared secret**: No change needed — reuse the existing shared secret from Full App embedding setup
 
 ---
@@ -354,6 +365,7 @@ Read each modified file and verify:
 - Web components have required attributes (`dashboard-id`, `question-id`, or `initial-collection`)
 - Template syntax is valid (no unclosed tags, correct expressions)
 - Dead-code variables identified in Step 3e have been removed
+- Proper and valid IDs were used for Modular embedding components
 
 **Pass criteria**: all checks pass.
 
