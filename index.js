@@ -4,7 +4,7 @@ const METABASE_SITE_URL =
     process.env.METABASE_SITE_URL || "http://localhost:3000";
 const METABASE_JWT_SHARED_SECRET =
     process.env.METABASE_JWT_SHARED_SECRET ||
-    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+    "0000000000000000000000000000000000000000000000000000000000000000";
 const METABASE_DASHBOARD_PATH =
     process.env.METABASE_DASHBOARD_PATH || "/dashboard/1";
 const mods = "logo=false";
