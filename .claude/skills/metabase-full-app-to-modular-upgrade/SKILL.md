@@ -69,6 +69,7 @@ You MUST use AskUserQuestion and halt until answered if:
 - Multiple layout files exist and it is unclear which one(s) to use
 - The backend language cannot be determined
 - The Metabase instance version cannot be determined from the project code
+- Multiple iframes specify different `locale` values (ask user which locale to set in `window.metabaseConfig`)
 
 ## Workflow
 
@@ -186,11 +187,15 @@ If an iframe path does not match any known pattern → AskUserQuestion.
 | `header=false` | `with-title="false"` on the component |
 | `action_buttons=false` | `drills="false"` on the component |
 
-**Parameters requiring manual Metabase admin configuration (note for user):**
+**Parameters that map to `window.metabaseConfig`:**
 
-| Full App Parameter | Manual Step |
+| Full App Parameter | metabaseConfig Property |
 |---|---|
-| `locale={code}` | Configure locale in Metabase admin settings |
+| `locale={code}` | `locale: "{code}"` |
+
+**Locale migration rules:**
+- If ONE locale value is found across all iframes → add `locale: "{code}"` to `window.metabaseConfig` automatically
+- If MULTIPLE DIFFERENT locale values are found across iframes → AskUserQuestion to let the user decide which single locale to set in `window.metabaseConfig` (modular embedding supports only one global locale)
 
 #### 2d: Output Migration Mapping Table
 
@@ -239,6 +244,7 @@ Modular embedding reads its configuration from `window.metabaseConfig`. There is
     };
   </script>
   ```
+- **Locale**: If a `locale` parameter was found on any iframe in Step 2c, add `locale: "{code}"` to the config object. If multiple iframes had different locale values, the user will have already been asked which one to use (per AskUserQuestion trigger).
 - Both `instanceUrl` and `jwtProviderUri` MUST be rendered dynamically using the project's template expression syntax.
 - **`jwtProviderUri`** MUST be a **full absolute URL** including protocol and host (e.g., `http://localhost:9090/sso/metabase`). Relative paths will NOT work. Pass the app's origin as a template variable (e.g., via middleware) and render: `jwtProviderUri: "{APP_URL}/sso/metabase"`.
   - On Metabase v59+, `jwtProviderUri` in client config is the preferred auth approach. For versions below v59, the JWT Identity Provider URI must be configured in admin settings instead (see Step 3g).

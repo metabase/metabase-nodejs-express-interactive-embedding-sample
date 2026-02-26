@@ -131,9 +131,28 @@ app.get("/", function (req, res) {
 });
 
 app.get("/analytics", restrict, function (req, res) {
-    var iframeUrl = `/sso/metabase?return_to=${METABASE_DASHBOARD_PATH}`;
+    var iframeUrl = `/sso/metabase?return_to=${METABASE_DASHBOARD_PATH}&locale=de`;
     res.send(
         `<iframe src="${iframeUrl}" frameborder="0" width="1280" height="1000" allowtransparency></iframe>`
+    );
+});
+
+app.get("/question", restrict, function (req, res) {
+    var iframeUrl1 = `/sso/metabase?return_to=/question/7&locale=fr`;
+    var iframeUrl2 = `/sso/metabase?return_to=/question/12&locale=fr`;
+    var iframeUrl3 = `/sso/metabase?return_to=/question/entity/abc123&locale=ar`;
+    res.send(`
+        <h2>Questions</h2>
+        <iframe src="${iframeUrl1}" frameborder="0" width="800" height="600" allowtransparency></iframe>
+        <iframe src="${iframeUrl2}" frameborder="0" width="800" height="400" allowtransparency></iframe>
+        <iframe src="${iframeUrl3}" frameborder="0" width="1000" height="500" allowtransparency></iframe>
+    `);
+});
+
+app.get("/collection", restrict, function (req, res) {
+    var iframeUrl = `/sso/metabase?return_to=/collection/5&locale=de`;
+    res.send(
+        `<iframe src="${iframeUrl}" frameborder="0" width="1280" height="900" allowtransparency></iframe>`
     );
 });
 
