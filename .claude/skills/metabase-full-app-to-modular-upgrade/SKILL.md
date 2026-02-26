@@ -32,32 +32,11 @@ Each step section MUST end with a status line:
 
 - `Status: ✅ complete` or `Status: ❌ blocked`
 
-### Step gating rules (hard)
-
-- You MUST NOT start Step 2 until Step 1 is ✅ complete (Step 2 depends on Step 1's inventory).
-- You MUST NOT start Step 3 until Step 2 is ✅ complete.
-- You MUST NOT start Step 4 until Step 3 is ✅ complete.
-- You MUST NOT start Step 5 until Step 4 is ✅ complete.
-- You MUST NOT output Step 6 until Step 5 is ✅ complete (or explicitly report ❌ blocked).
-
-### Evidence requirements (hard)
-
-- Step 1 evidence: list every file path containing Metabase iframes or SSO/JWT code. State the backend language/framework, template engine, layout/head file path, and every Metabase-related environment variable or constant.
-- Step 2 evidence: for each iframe, show: file path, full iframe HTML or code generating it, the Metabase URL pattern, embedded content type (dashboard/question/collection/home), all URL parameters, and the exact replacement web component HTML with all attributes.
-- Step 3 evidence: a file-by-file change plan listing old code → new code for every modification.
-- Step 4 evidence: show the exact diffs applied via Edit tool (or file edits described precisely).
-- Step 5 evidence: list every check performed and its pass/fail result. Show Grep output proving embed.js appears exactly once and `window.metabaseConfig` is set exactly once.
+Steps are sequential — do not start a step until the previous one is ✅ complete.
 
 ## Architectural conformance (hard)
 
-All changes MUST follow the existing app's architecture, patterns, and conventions. Specifically:
-
-- If the app uses a template engine (EJS, Handlebars, Pug, etc.) for rendering pages, new or modified pages MUST also use that template engine — do NOT switch to inline `res.send()` HTML strings (or vice versa).
-- If the app uses a layout/partial system (e.g., `head.ejs` + `foot.ejs`), new pages MUST use the same includes — do NOT create standalone HTML pages that bypass the layout.
-- Match the existing code style: variable naming conventions (`const` vs `var`, camelCase vs snake_case), indentation, quote style, semicolon usage, etc.
-- If the app passes data to templates via `res.render("view", { data })`, continue using that pattern — do NOT embed server-side variables directly into inline HTML strings.
-- If the app has middleware for shared template variables (`res.locals`), prefer adding new shared variables there rather than duplicating them across route handlers.
-- Preserve the existing route structure and naming conventions.
+Follow the app's existing architecture, template engine, layout/partial system, code style, and route patterns. Do not switch paradigms (e.g., templates to inline HTML or vice versa). If the app has middleware for shared template variables, prefer that over duplicating across route handlers.
 
 ## Important performance notes
 
@@ -91,21 +70,6 @@ You MUST use AskUserQuestion and halt until answered if:
 - The backend language cannot be determined
 - The Metabase instance version cannot be determined from the project code
 
-## Pre-workflow
-
-### Migration Plan Checklist (required before any other work)
-
-Create a TODO list with these items:
-
-- [ ] Step 1: Scan project (backend, templates, iframes, SSO, config)
-- [ ] Step 2: Analyze iframes and map to web components
-- [ ] Step 3: Plan all migration changes
-- [ ] Step 4: Apply code changes
-- [ ] Step 5: Validate changes
-- [ ] Step 6: Final summary
-
----
-
 ## Workflow
 
 ### Step 1: Scan the project (NO sub-agent)
@@ -114,9 +78,8 @@ Perform ALL of the following scans. Use parallel tool calls within a single mess
 
 #### 1a: Identify backend language and framework
 
-- Check for `package.json`, `requirements.txt`, `Pipfile`, `pyproject.toml`, `Gemfile`, `pom.xml`, `build.gradle`, `go.mod`, `composer.json`, `*.csproj`, or equivalent.
-- Identify the template engine: EJS, Handlebars, Pug, Jinja2, Django templates, ERB, Blade, Thymeleaf, JSX/TSX, Vue SFC, Svelte, plain HTML, or inline HTML strings in server code.
-- Record the language and framework.
+- Check for dependency/build files (`package.json`, `requirements.txt`, `Gemfile`, `pom.xml`, `go.mod`, `composer.json`, etc.).
+- Identify the template engine and record the language and framework.
 
 #### 1b: Find ALL Metabase iframes
 
@@ -143,31 +106,17 @@ For EACH matching file, Read the ENTIRE file.
 
 #### 1d: Find the layout/head file(s)
 
-This is CRITICAL — `embed.js` and `window.metabaseConfig` MUST be injected into the correct layout file exactly once.
+Find the SINGLE file (or common code path) where the HTML `<head>` section is defined — this is where `embed.js` and `window.metabaseConfig` will be injected.
 
 Search for:
 
 - `<head>` or `<!DOCTYPE` or `<html` in template/view files
-- Layout/wrapper patterns: `include('head')`, `<%- include`, `{% extends`, `{% block`, `layout`, `base.html`, `_layout`, `application.html`, `master.blade.php`, `app.html`
-- If the app builds HTML via inline strings in server code (e.g., `res.send(...)` in Express), identify the response(s) that generate the full HTML page
-
-Determine the SINGLE file (or common code path) where the HTML `<head>` section is defined. This is where embed.js will go.
-
-If templates use a partial/include system, identify the head partial (e.g., `head.ejs`, `_head.html.erb`, `head.blade.php`).
-
-If no template engine is used and HTML is assembled via string concatenation in server code, identify the code location where the `<head>` content is generated.
+- Layout/wrapper patterns: `include('head')`, `<%- include`, `{% extends`, `{% block`, `layout`, `base.html`, `_layout`, `application.html`
+- If the app builds HTML via inline strings in server code (e.g., `res.send(...)`), identify where the `<head>` content is generated
 
 #### 1e: Find Metabase configuration
 
-Use Grep to search for:
-
-- `METABASE_SITE_URL` or `METABASE_URL` or `METABASE_INSTANCE_URL` or `MB_SITE_URL`
-- `METABASE_DASHBOARD_PATH` or similar dashboard path variables
-- `METABASE_JWT_SHARED_SECRET`
-- Any other `METABASE_` prefixed variables
-- The config mechanism: `process.env`, `os.environ`, `ENV[]`, `getenv()`, `System.getenv()`, etc.
-
-Record every Metabase-related variable name and where it is read.
+Grep for `METABASE_` and `MB_SITE_URL` prefixed variables. Record every Metabase-related variable name and where it is read.
 
 #### Output: Structured Project Inventory
 
@@ -271,17 +220,9 @@ Create a COMPLETE file-by-file change plan covering ALL areas below. Every chang
   ```html
   <script defer src="{METABASE_SITE_URL}/app/embed.js"></script>
   ```
-- The `{METABASE_SITE_URL}` MUST be rendered dynamically using the same mechanism the project already uses for server-side values in templates.
-  - EJS: `<%= metabaseSiteUrl %>`
-  - Handlebars: `{{ metabaseSiteUrl }}`
-  - Jinja2: `{{ metabase_site_url }}`
-  - ERB: `<%= @metabase_site_url %>`
-  - Inline string: template literal or concatenation using the existing variable
-  - etc.
-- If the Metabase URL variable is only available in specific routes (not globally), plan how to pass it to the layout. Options:
-  - Add it to `res.locals` / template context globally (e.g., via middleware)
-  - Or pass it to every `render()` call that uses the layout
-- **CRITICAL**: Verify this will appear EXACTLY ONCE in the rendered HTML regardless of which page the user visits. If templates include the head partial multiple times or on different pages, ensure the script appears only once.
+- `{METABASE_SITE_URL}` MUST be rendered dynamically using the project's existing template expression syntax.
+- If the Metabase URL variable is only available in specific routes, pass it to the layout via middleware or template context.
+- **CRITICAL**: Verify this will appear EXACTLY ONCE in the rendered HTML regardless of which page the user visits.
 
 #### 3b: metabaseConfig — EXACTLY ONCE per app
 
@@ -298,12 +239,9 @@ Modular embedding reads its configuration from `window.metabaseConfig`. There is
     };
   </script>
   ```
-- The `instanceUrl` MUST be rendered dynamically using the same mechanism as the embed.js src.
-- **`jwtProviderUri`** (Metabase v59+): MUST be a **full absolute URL** including protocol and host (e.g., `http://localhost:9090/sso/metabase`). Relative paths like `/sso/metabase` will NOT work — embed.js requires the complete URL to make cross-origin requests. The URL MUST be rendered dynamically using the app's origin (protocol + host). To achieve this:
-  - Pass the app's origin as a template variable (e.g., via middleware: `res.locals.appUrl = \`${req.protocol}://${req.get("host")}\``)
-  - Then render: `jwtProviderUri: "{APP_URL}/sso/metabase"` using the template engine's expression syntax
-  - This ensures the URL is correct regardless of the deployment environment (localhost, staging, production)
-  This tells embed.js where to fetch JWT tokens for authentication. On Metabase v59 and above, setting `jwtProviderUri` in the client-side config is the preferred approach — it allows embed.js to handle authentication automatically without requiring the JWT Identity Provider URI to be configured in Metabase admin settings. For Metabase versions below v59, this property is not supported and the JWT Identity Provider URI must be configured in admin settings instead (see Step 3g).
+- Both `instanceUrl` and `jwtProviderUri` MUST be rendered dynamically using the project's template expression syntax.
+- **`jwtProviderUri`** MUST be a **full absolute URL** including protocol and host (e.g., `http://localhost:9090/sso/metabase`). Relative paths will NOT work. Pass the app's origin as a template variable (e.g., via middleware) and render: `jwtProviderUri: "{APP_URL}/sso/metabase"`.
+  - On Metabase v59+, `jwtProviderUri` in client config is the preferred auth approach. For versions below v59, the JWT Identity Provider URI must be configured in admin settings instead (see Step 3g).
 - **CRITICAL**: `window.metabaseConfig` MUST be set EXACTLY ONCE. It must NOT appear inside any per-iframe replacement code.
 
 #### 3c: SSO endpoint modification
@@ -367,11 +305,9 @@ Apply ALL changes from Step 3 in this EXACT order:
 **IMPORTANT constraints:**
 
 - Use the Edit tool with precise `old_string` / `new_string` for every change
-- Do NOT delete or modify files unrelated to the migration
-- Do NOT change environment variable names — preserve existing configuration
-- Do NOT add new package dependencies (no `npm install`, `pip install`, etc.) — modular embedding requires ONLY the embed.js script served by the Metabase instance
-- Preserve ALL existing CSS classes, IDs, and styles on container elements around iframes
-- If a file requires multiple edits, apply them in order from TOP to BOTTOM of the file to avoid offset issues
+- Do NOT add new package dependencies — modular embedding requires ONLY the embed.js script served by the Metabase instance
+- Do NOT change environment variable names
+- If a file requires multiple edits, apply them top-to-bottom to avoid offset issues
 
 ---
 
@@ -406,29 +342,14 @@ Read the SSO endpoint file. Verify:
 
 **Pass criteria**: endpoint returns JSON only, no redirect fallback remains.
 
-#### 5e: Web components have required attributes
+#### 5e: Spot-check modified files
 
-For each web component added in Step 4, verify it has the correct required attribute:
-- `<metabase-dashboard>` MUST have `dashboard-id`
-- `<metabase-question>` MUST have `question-id`
-- `<metabase-browser>` MUST have `initial-collection`
+Read each modified file and verify:
+- Web components have required attributes (`dashboard-id`, `question-id`, or `initial-collection`)
+- Template syntax is valid (no unclosed tags, correct expressions)
+- Dead-code variables identified in Step 3e have been removed
 
-**Pass criteria**: every web component has its required attribute.
-
-#### 5f: Template syntax is valid
-
-Read each modified template file. Verify:
-- No unclosed tags
-- Template expressions are syntactically correct for the detected template engine
-- Script blocks have matching opening/closing tags
-
-**Pass criteria**: no obvious syntax errors.
-
-#### 5g: No orphaned variables
-
-Grep for any variables identified in Step 3e (dead code). Verify they have been removed.
-
-**Pass criteria**: none of the identified dead-code variables remain.
+**Pass criteria**: all checks pass.
 
 If ANY check fails:
 - Fix the issue immediately
@@ -454,15 +375,3 @@ Organize the final output into these sections:
    - Users can no longer navigate between dashboards/questions/collections within a single embed (each web component is standalone)
    - The Metabase application shell (nav, sidebar, search) is no longer present
    - Any iframe parameters that could not be mapped
-
-## Retry policy
-
-If any file Read or Grep operation fails:
-
-- Retry once immediately (same parameters)
-- If still failing, mark that step ❌ blocked and stop
-
-If AskUserQuestion returns an ambiguous answer:
-
-- Ask a more specific follow-up question
-- If still unclear after 2 attempts, mark ❌ blocked and explain what information is needed
